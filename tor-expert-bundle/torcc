@@ -1,8 +1,8 @@
-ExitNodes {jp}
+ExitNodes {us}
 StrictNodes 1
 
-GeoIPFile .\geoip
-GeoIPv6File .\geoip6
+GeoIPFile .\tor-expert-bundle\geoip
+GeoIPv6File .\tor-expert-bundle\geoip6
 
 UseMicrodescriptors 1
 ClientUseIPv6 0

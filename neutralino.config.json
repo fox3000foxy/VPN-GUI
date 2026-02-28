@@ -4,9 +4,18 @@
   "url": "http://localhost:5173",
   "enableServer": true,
   "enableNativeAPI": true,
+  "port": 0,
   "server": {
-    "port": 3000,
-    "enableCORS": true
+    "port": 5173,
+    "strictPort": true,
+    "hmr": {
+      "port": 5173
+    }
+  },
+  "tokenSecurity": "one-time",
+  "logging": {
+    "enabled": true,
+    "writeToLogFile": true
   },
   "window": {
     "title": "VPN GUI",
@@ -14,6 +23,48 @@
     "height": 600,
     "resizable": true,
     "enableDevTools": true
+  },
+  "modes": {
+    "window": {
+      "title": "hello-world",
+      "width": 800,
+      "height": 500,
+      "minWidth": 400,
+      "minHeight": 200,
+      "center": true,
+      "fullScreen": false,
+      "alwaysOnTop": false,
+      "icon": "/resources/icons/appIcon.png",
+      "enableInspector": true,
+      "borderless": false,
+      "maximize": false,
+      "hidden": false,
+      "resizable": true,
+      "exitProcessOnClose": false
+    },
+    "browser": {
+      "globalVariables": {
+        "TEST": "Test value browser"
+      },
+      "nativeBlockList": [
+        "filesystem.*"
+      ]
+    },
+    "cloud": {
+      "url": "/resources/#cloud",
+      "nativeAllowList": [
+        "app.*"
+      ]
+    },
+    "chrome": {
+      "width": 800,
+      "height": 500,
+      "args": "--user-agent=\"Neutralinojs chrome mode\"",
+      "nativeBlockList": [
+        "filesystem.*",
+        "os.*"
+      ]
+    }
   },
   "platform": "windows",
   "cli": {

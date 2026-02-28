@@ -1,1 +1,1 @@
-tor.exe -f torcc
+tor-expert-bundle\tor.exe -f tor-expert-bundle\torcc

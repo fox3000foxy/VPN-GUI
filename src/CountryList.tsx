@@ -6,6 +6,9 @@ const CountryList: React.FC<CountryListProps> = ({ countries }) => {
     return localStorage.getItem('selectedCountry') || '';
   });
 
+  // To prevent Encountered two children with the same key message, we can keep track of used country codes and skip duplicates
+  const usedCountries: string[] = []
+
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setCountry(e.target.value);
     localStorage.setItem('selectedCountry', e.target.value);
@@ -17,11 +20,16 @@ const CountryList: React.FC<CountryListProps> = ({ countries }) => {
       value={country}
       onChange={handleChange}
     >
-      {countries.map(country => (
+    {countries.map(country => {
+      if (usedCountries.includes(country.code)) {
+        return null; // Skip duplicates
+      }
+      usedCountries.push(country.code);
+      return (
         <option key={country.code} value={country.code}>
           {country.name}
         </option>
-      ))}
+      )})}
     </select>
   );
 };
