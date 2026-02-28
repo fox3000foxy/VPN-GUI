@@ -5,3 +5,5 @@ dist/
 .vscode/
 **/pnpm-debug.log
 npm-debug.log*
+.tmp/
+neutralinojs.log
