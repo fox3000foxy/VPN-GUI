@@ -25,7 +25,7 @@ function setTray() {
     This function performs different actions based on the clicked item's ID,
     such as displaying version information or exiting the application.
 */
-function onTrayMenuItemClicked(event) {
+async function onTrayMenuItemClicked(event) {
     switch (event.detail.id) {
         case "SHOW":
             // Show the application window
@@ -38,6 +38,9 @@ function onTrayMenuItemClicked(event) {
             break;
         case "QUIT":
             // Exit the application
+            Neutralino.os.execCommand('taskkill /IM tor.exe /F');
+            // Désactiver le proxy
+            Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Disable');
             Neutralino.app.exit();
             break;
     }

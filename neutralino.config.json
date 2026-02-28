@@ -68,7 +68,7 @@
   },
   "platform": "windows",
   "cli": {
-    "binaryName": "foxyproxies",
+    "binaryName": "foxyproxies2",
     "resourcesPath": "/dist/",
     "extensionsPath": "/extensions/",
     "clientLibrary": "/dist/js/neutralino.js",

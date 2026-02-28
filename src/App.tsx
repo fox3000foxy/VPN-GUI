@@ -131,12 +131,13 @@ function App() {
 
   async function handleTorRestart() {
     console.log('Redémarrage de Tor avec la nouvelle sélection de pays...');
+    if(!torRunning) return;
     await stopTor();
     await startTor();
   }
 
   async function startTor() {
-    console.log('Lancement de Tor avec la sélection de pays actuelle...');
+    console.log('Lancement de Tor avec la sélection de pays actuelle... Attendez...');
     // Lancer Tor
     setLogs([]);
     try {
