@@ -16,7 +16,7 @@ const CountryList: React.FC<CountryListProps> = ({ countries }) => {
 
   return (
     <select
-      style={{ width: '100%', padding: '8px', fontSize: '1em' }}
+      className="w-full p-2 text-base rounded-lg border border-gray-400 bg-gray-900 text-gray-100 focus:outline-none focus:border-cyan-500 transition-colors"
       value={country}
       onChange={handleChange}
     >

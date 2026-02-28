@@ -100,24 +100,24 @@ function App() {
           const process = await Neutralino.os.spawnProcess('tor-expert-bundle\\start.bat');
           setTorProcessId(process.id);
           setTorRunning(true);
-          // setLogs(prev => [...prev, `Processus Tor lancé avec ID: ${process.id}`]);
-          Neutralino.events.on('spawnedProcess', (evt: { detail: { id: any; action: any; data: any } }) => {
+          Neutralino.events.on('spawnedProcess', async (evt: { detail: { id: any; action: any; data: any } }) => {
             if (process.id === evt.detail.id) {
               switch (evt.detail.action) {
                 case 'stdOut':
                   console.log(`Tor: ${evt.detail.data}`);
                   const treated = treatPercentages(evt.detail.data);
                   if (treated) {
-                    // setLogs(prev => [...prev, `${treated.message} (${treated.percent}%)`]);
                     setTorProgress(treated.percent);
                     setLastTorLog(treated.message);
+                    if (treated.percent === 100) {
+                      await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Enable -Host 127.0.0.1 -Port 9050');
+                    }
                   }
                   break;
                 case 'stdErr':
                   setLogs(prev => [...prev, `Erreur: ${evt.detail.data}`]);
                   break;
                 case 'exit':
-                  // setLogs(prev => [...prev, `Processus Tor terminé (code: ${evt.detail.data})`]);
                   setTorRunning(false);
                   setTorProcessId(null);
                   break;
@@ -131,7 +131,8 @@ function App() {
         // Stopper Tor
         try {
           await Neutralino.os.execCommand('taskkill /IM tor.exe /F');
-          // setLogs(prev => [...prev, 'Processus Tor stoppé par l’utilisateur.']);
+          // Désactiver le proxy
+          await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Disable');
           setTorRunning(false);
           setTorProcessId(null);
         } catch (error: Error | any) {
@@ -144,41 +145,43 @@ function App() {
     }
   }
   return (
-    <div className='App'>
-      <h1>
-        <FontAwesomeIcon icon={faGlobe} style={{ marginRight: '8px' }} />
-        Liste des pays
-      </h1>
-      {loading && <p>Chargement...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {!loading && !error && <CountryList countries={countries} />}
-      {torRunning && torProgress < 100 ? (
-        <span
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            marginTop: 16,
-            flexDirection: 'row',
-            gap: 8,
-          }}>
-          <meter value={torProgress} max='100' style={{ width: 260 }}></meter>
-          <>{torProgress}%</>
-          <span>{lastTorLog}</span>
-        </span>
-      ) : null}
-      <button onClick={handleTorButton} style={{ marginTop: 16 }}>
-        <span className='private-icon'>
-          <FontAwesomeIcon icon={faUserSecret} />
-        </span>
-        {torRunning ? 'Arrêter TorGUI' : 'Lancer TorGUI'}
-      </button>
-      <div style={{ marginTop: 16, textAlign: 'left', maxWidth: 400 }}>
-        {logs.map((log, idx) => (
-          <div key={idx} style={{ fontSize: '0.95em' }}>
-            {log}
-          </div>
-        ))}
+    <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-gray-800 to-cyan-900 flex flex-col justify-center items-center">
+      <div className="w-full max-w-xl bg-white/5 backdrop-blur-md rounded-xl shadow-lg p-8 mt-12 mb-4 flex flex-col items-center">
+        <h1 className="text-3xl font-bold mb-2 flex items-center justify-center text-gray-100 drop-shadow">
+          <FontAwesomeIcon icon={faGlobe} className="mr-3 text-cyan-400" />
+          Liste des pays
+        </h1>
+        <p className="mb-6 text-gray-300 text-lg">Sélectionne un pays pour utiliser Tor avec un proxy local sécurisé.</p>
+        {loading && <p className="text-gray-400">Chargement...</p>}
+        {error && <p className="text-red-500">{error}</p>}
+        {!loading && !error && <CountryList countries={countries} />}
+        {torRunning && torProgress < 100 ? (
+          <span className="flex items-center mt-4 flex-row gap-2">
+            <meter value={torProgress} max="100" className="w-[260px]" />
+            <span className="text-cyan-400 font-semibold">{torProgress}%</span>
+            <span className="text-gray-300">{lastTorLog}</span>
+          </span>
+        ) : null}
+        <button
+          onClick={handleTorButton}
+          className="mt-6 px-5 py-2 rounded-lg bg-cyan-700 text-white flex items-center gap-2 hover:bg-cyan-600 transition-colors shadow-md font-semibold"
+        >
+          <span className="text-white text-xl align-middle">
+            <FontAwesomeIcon icon={faUserSecret} />
+          </span>
+          {torRunning ? 'Arrêter TorGUI' : 'Lancer TorGUI'}
+        </button>
+        <div className="mt-6 text-left w-full max-w-md">
+          {logs.map((log, idx) => (
+            <div key={idx} className="text-[0.95em] text-gray-300">
+              {log}
+            </div>
+          ))}
+        </div>
       </div>
+      <footer className="w-full text-center py-4 text-gray-400 text-sm opacity-80">
+        TorGUI by Fox3000foxy &copy; 2026
+      </footer>
     </div>
   );
 }
