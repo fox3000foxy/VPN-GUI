@@ -1,9 +1,16 @@
-import { faGlobe } from '@fortawesome/free-solid-svg-icons';
+import { faGlobe, faUserSecret } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
 import CountryList from './CountryList';
 import { fetchCountries } from './countriesApi';
 import { Country } from './types/Country';
+
+// Declare Neutralino on the window object for TypeScript
+declare global {
+  interface Window {
+    Neutralino: any;
+  }
+}
 
 function App() {
   const [countries, setCountries] = useState<Country[]>([]);
@@ -22,6 +29,13 @@ function App() {
       });
   }, []);
 
+  function launchTorGUI() {
+    // Chemin relatif depuis la racine du projet Neutralino
+    window.Neutralino.os.execCommand({
+      command: 'tor-expert-bundle\\start.bat'
+    });
+  }
+
   return (
     <div className="App">
       <h1>
@@ -31,6 +45,12 @@ function App() {
       {loading && <p>Chargement...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {!loading && !error && <CountryList countries={countries} />}
+      <button onClick={launchTorGUI} style={{marginTop: 16}}>
+        <span className="private-icon">
+          <FontAwesomeIcon icon={faUserSecret} />
+        </span>
+        Lancer TorGUI
+      </button>
     </div>
   );
 }

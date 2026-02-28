@@ -1,30 +1,29 @@
 import React from 'react';
 import { CountryListProps } from './types/Country';
 
-const CountryList: React.FC<CountryListProps> = ({ countries }) => (
-  <ul style={{ listStyle: 'none', padding: 0 }}>
-    {countries.map((country) => {
-      const code = typeof country.code === 'string' && country.code.length === 2 ? country.code.toLowerCase() : null;
-      const flagUrl = code ? `https://flagcdn.com/24x18/${code}.png` : null;
-      return (
-        <li key={country.code} style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-          {flagUrl ? (
-            <img
-              src={flagUrl}
-              alt={`Drapeau ${country.code}`}
-              style={{ width: 24, height: 18, marginRight: 8, objectFit: 'cover', borderRadius: 2, border: '1px solid #ccc' }}
-              title={`Drapeau ${country.code}`}
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
-          ) : (
-            <span style={{ fontSize: '1.5em', marginRight: 8 }}>🏳️</span>
-          )}
-          <span style={{ marginRight: 8 }}>{country.code}</span>
-          <span>{country.name}</span>
-        </li>
-      );
-    })}
-  </ul>
-);
+const CountryList: React.FC<CountryListProps> = ({ countries }) => {
+  const [country, setCountry] = React.useState<string>(() => {
+    return localStorage.getItem('selectedCountry') || '';
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCountry(e.target.value);
+    localStorage.setItem('selectedCountry', e.target.value);
+  };
+
+  return (
+    <select
+      style={{ width: '100%', padding: '8px', fontSize: '1em' }}
+      value={country}
+      onChange={handleChange}
+    >
+      {countries.map(country => (
+        <option key={country.code} value={country.code}>
+          {country.name}
+        </option>
+      ))}
+    </select>
+  );
+};
 
 export default CountryList;
