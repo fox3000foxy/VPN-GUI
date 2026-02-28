@@ -1,8 +1,12 @@
-import { faGlobe, faUserSecret } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
 import { nlPort, nlToken } from '../.tmp/auth_info.json';
 import CountryList from './components/CountryList';
+import Footer from './components/Footer';
+import Header from './components/Header';
+import Logs from './components/Logs';
+import SecurityIndicator from './components/SecurityIndicator';
+import TorButton from './components/TorButton';
+import TorProgress from './components/TorProgress';
 import { fetchCountries } from './libs/countriesApi';
 import { Country } from './types/Country';
 
@@ -32,6 +36,17 @@ function treatPercentages(log: string): { percent: number; message: string } | n
   };
 }
 
+async function getIp() {
+  try {
+    const res = await fetch('http://ip-api.com/json');
+    const data = await res.json();
+    return data.query || null;
+  } catch (err) {
+    console.error('Erreur lors de la récupération de l’IP:', err);
+    return null;
+  }
+}
+
 function App() {
   const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +56,10 @@ function App() {
   const [torRunning, setTorRunning] = useState(false);
   const [torProgress, setTorProgress] = useState(0);
   const [lastTorLog, setLastTorLog] = useState('');
+  const [ip, setIp] = useState<string | null>(null);
+  const [ipLoading, setIpLoading] = useState(false);
+  const [ipError, setIpError] = useState<string | null>(null);
+  const [initialIpFetched, setInitialIpFetched] = useState<string | null>(null);
 
   // Kill Tor process at startup
   useEffect(() => {
@@ -52,11 +71,13 @@ function App() {
             if (proc.id && proc.id !== 0) {
               // await Neutralino.os.updateSpawnedProcess(proc.id, '^C'); // Envoie Ctrl+C pour une terminaison propre
               await Neutralino.os.execCommand('taskkill /IM tor.exe /F');
+              await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Disable');
               console.log(`Processus Tor avec PID ${proc.pid} tué au chargement.`);
             }
           }
           setTorProcessId(null);
           setTorRunning(false);
+
           // setLogs(prev => [...prev, 'Tous les processus Tor ont été stoppés au chargement.']);
         } catch (err) {
           console.error('Erreur lors du kill des processus Tor au chargement:', err);
@@ -89,6 +110,20 @@ function App() {
         setLoading(false);
       });
     console.log('Application démarrée');
+
+    const fetchInitialIp = async () => {
+      setIpLoading(true);
+      const initialIp = await getIp();
+      if (initialIp) {
+        setIp(initialIp);
+        setIpError(null);
+      } else {
+        setIpError('Impossible de récupérer votre IP au démarrage');
+      }
+      setIpLoading(false);
+      setInitialIpFetched(initialIp || null);
+    };
+    fetchInitialIp();
   }, []);
 
   async function handleTorButton() {
@@ -97,9 +132,11 @@ function App() {
         // Lancer Tor
         setLogs([]);
         try {
+          setTorRunning(true);
+          setTorProgress(0);
+          setLastTorLog('Starting');
           const process = await Neutralino.os.spawnProcess('tor-expert-bundle\\start.bat');
           setTorProcessId(process.id);
-          setTorRunning(true);
           Neutralino.events.on('spawnedProcess', async (evt: { detail: { id: any; action: any; data: any } }) => {
             if (process.id === evt.detail.id) {
               switch (evt.detail.action) {
@@ -107,11 +144,21 @@ function App() {
                   console.log(`Tor: ${evt.detail.data}`);
                   const treated = treatPercentages(evt.detail.data);
                   if (treated) {
-                    setTorProgress(treated.percent);
-                    setLastTorLog(treated.message);
                     if (treated.percent === 100) {
                       await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Enable -Host 127.0.0.1 -Port 9050');
+                      // Fetch IP après activation du proxy
+                      setIpLoading(true);
+                      const newIp = await getIp();
+                      if (newIp) {
+                        setIp(newIp);
+                        setIpError(null);
+                      } else {
+                        setIpError('Impossible de récupérer votre IP après activation de Tor');
+                      }
+                      setIpLoading(false);
                     }
+                    setTorProgress(treated.percent);
+                    setLastTorLog(treated.message);
                   }
                   break;
                 case 'stdErr':
@@ -120,6 +167,8 @@ function App() {
                 case 'exit':
                   setTorRunning(false);
                   setTorProcessId(null);
+                  setIp(initialIpFetched); // Revenir à l'IP initiale
+                  setIpError(null);
                   break;
               }
             }
@@ -135,6 +184,8 @@ function App() {
           await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Disable');
           setTorRunning(false);
           setTorProcessId(null);
+          setIp(initialIpFetched); // Revenir à l'IP initiale
+          setIpError(null);
         } catch (error: Error | any) {
           setError(`Échec de l’arrêt de Tor : ${error.message}`);
           console.error('Erreur lors de l’arrêt de Tor:', error);
@@ -145,43 +196,18 @@ function App() {
     }
   }
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-gray-800 to-cyan-900 flex flex-col justify-center items-center">
-      <div className="w-full max-w-xl bg-white/5 backdrop-blur-md rounded-xl shadow-lg p-8 mt-12 mb-4 flex flex-col items-center">
-        <h1 className="text-3xl font-bold mb-2 flex items-center justify-center text-gray-100 drop-shadow">
-          <FontAwesomeIcon icon={faGlobe} className="mr-3 text-cyan-400" />
-          Liste des pays
-        </h1>
-        <p className="mb-6 text-gray-300 text-lg">Sélectionne un pays pour utiliser Tor avec un proxy local sécurisé.</p>
-        {loading && <p className="text-gray-400">Chargement...</p>}
-        {error && <p className="text-red-500">{error}</p>}
+    <div className='min-h-screen w-full bg-gradient-to-br from-gray-900 via-gray-800 to-cyan-900 flex flex-col justify-center items-center'>
+      <div className='w-full max-w-xl bg-white/5 backdrop-blur-md rounded-xl shadow-lg p-8 mt-12 mb-4 flex flex-col items-center'>
+        <SecurityIndicator torRunning={torRunning} torProgress={torProgress} ip={ip} ipLoading={ipLoading} ipError={ipError} />
+        <Header />
+        {loading && <p className='text-gray-400'>Chargement...</p>}
+        {error && <p className='text-red-500'>{error}</p>}
         {!loading && !error && <CountryList countries={countries} />}
-        {torRunning && torProgress < 100 ? (
-          <span className="flex items-center mt-4 flex-row gap-2">
-            <meter value={torProgress} max="100" className="w-[260px]" />
-            <span className="text-cyan-400 font-semibold">{torProgress}%</span>
-            <span className="text-gray-300">{lastTorLog}</span>
-          </span>
-        ) : null}
-        <button
-          onClick={handleTorButton}
-          className="mt-6 px-5 py-2 rounded-lg bg-cyan-700 text-white flex items-center gap-2 hover:bg-cyan-600 transition-colors shadow-md font-semibold"
-        >
-          <span className="text-white text-xl align-middle">
-            <FontAwesomeIcon icon={faUserSecret} />
-          </span>
-          {torRunning ? 'Arrêter TorGUI' : 'Lancer TorGUI'}
-        </button>
-        <div className="mt-6 text-left w-full max-w-md">
-          {logs.map((log, idx) => (
-            <div key={idx} className="text-[0.95em] text-gray-300">
-              {log}
-            </div>
-          ))}
-        </div>
+        <TorProgress torRunning={torRunning} torProgress={torProgress} lastTorLog={lastTorLog} />
+        <TorButton torRunning={torRunning} torProgress={torProgress} handleTorButton={handleTorButton} />
+        <Logs logs={logs} />
       </div>
-      <footer className="w-full text-center py-4 text-gray-400 text-sm opacity-80">
-        TorGUI by Fox3000foxy &copy; 2026
-      </footer>
+      <Footer />
     </div>
   );
 }
