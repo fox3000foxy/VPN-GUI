@@ -1,8 +1,9 @@
 {
-  "applicationId": "com.example.vpn-gui",
+  "applicationId": "com.fox3000foxy.vpn-gui",
   "defaultMode": "window",
-  "url": "./index.html",
+  "url": "http://localhost:5173",
   "enableServer": true,
+  "enableNativeAPI": true,
   "server": {
     "port": 3000,
     "enableCORS": true
@@ -11,7 +12,8 @@
     "title": "VPN GUI",
     "width": 800,
     "height": 600,
-    "resizable": true
+    "resizable": true,
+    "enableDevTools": true
   },
   "platform": "windows",
   "cli": {

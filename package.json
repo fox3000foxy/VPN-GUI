@@ -8,8 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "neutralino:start": "neutralino --app=./neutralino.config.json --start",
-    "neutralino:build": "neutralino build --release"
+    "neutralino:start": "npx neu run",
+    "neutralino:build": "npx neu build --release"
   },
   "keywords": [],
   "author": "",
