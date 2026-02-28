@@ -5,4 +5,5 @@ export type Country = {
 
 export interface CountryListProps {
   countries: Country[];
+  onRestart?: () => void; // Optional callback for restarting Tor when a country is selected
 }

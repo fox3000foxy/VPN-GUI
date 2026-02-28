@@ -7,6 +7,7 @@ import Logs from './components/Logs';
 import SecurityIndicator from './components/SecurityIndicator';
 import TorButton from './components/TorButton';
 import TorProgress from './components/TorProgress';
+import TorRestartButton from './components/TorRestartButton';
 import { fetchCountries } from './libs/countriesApi';
 import { Country } from './types/Country';
 
@@ -60,29 +61,31 @@ function App() {
   const [ipLoading, setIpLoading] = useState(false);
   const [ipError, setIpError] = useState<string | null>(null);
   const [initialIpFetched, setInitialIpFetched] = useState<string | null>(null);
+  const [restarting, setRestarting] = useState(false);
 
   // Kill Tor process at startup
   useEffect(() => {
     async function killTorOnLoad() {
       if (Neutralino && Neutralino.os) {
-        try {
-          const processes = await Neutralino.os.getSpawnedProcesses();
-          for (const proc of processes) {
-            if (proc.id && proc.id !== 0) {
-              // await Neutralino.os.updateSpawnedProcess(proc.id, '^C'); // Envoie Ctrl+C pour une terminaison propre
-              await Neutralino.os.execCommand('taskkill /IM tor.exe /F');
-              await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Disable');
-              console.log(`Processus Tor avec PID ${proc.pid} tué au chargement.`);
-            }
-          }
-          setTorProcessId(null);
-          setTorRunning(false);
+        // try {
+        //   const processes = await Neutralino.os.getSpawnedProcesses();
+        //   for (const proc of processes) {
+        //     // if (proc.id && proc.id !== 0) {
+        //       // await Neutralino.os.updateSpawnedProcess(proc.id, '^C'); // Envoie Ctrl+C pour une terminaison propre
 
-          // setLogs(prev => [...prev, 'Tous les processus Tor ont été stoppés au chargement.']);
-        } catch (err) {
-          console.error('Erreur lors du kill des processus Tor au chargement:', err);
-          // setLogs(prev => [...prev, 'Erreur lors du kill des processus Tor au chargement.']);
-        }
+        //       console.log(`Processus Tor avec PID ${proc.pid} tué au chargement.`);
+        //     // }
+        //   }
+        //   setTorProcessId(null);
+        //   setTorRunning(false);
+
+        //   // setLogs(prev => [...prev, 'Tous les processus Tor ont été stoppés au chargement.']);
+        // } catch (err) {
+        //   console.error('Erreur lors du kill des processus Tor au chargement:', err);
+        //   // setLogs(prev => [...prev, 'Erreur lors du kill des processus Tor au chargement.']);
+        // }
+        await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Disable');
+        await Neutralino.os.execCommand('taskkill /IM tor.exe /F');
       }
     }
     killTorOnLoad();
@@ -126,70 +129,86 @@ function App() {
     fetchInitialIp();
   }, []);
 
-  async function handleTorButton() {
-    if (Neutralino && Neutralino.os) {
-      if (!torRunning) {
-        // Lancer Tor
-        setLogs([]);
-        try {
-          setTorRunning(true);
-          setTorProgress(0);
-          setLastTorLog('Starting');
-          const process = await Neutralino.os.spawnProcess('tor-expert-bundle\\start.bat');
-          setTorProcessId(process.id);
-          Neutralino.events.on('spawnedProcess', async (evt: { detail: { id: any; action: any; data: any } }) => {
-            if (process.id === evt.detail.id) {
-              switch (evt.detail.action) {
-                case 'stdOut':
-                  console.log(`Tor: ${evt.detail.data}`);
-                  const treated = treatPercentages(evt.detail.data);
-                  if (treated) {
-                    if (treated.percent === 100) {
-                      await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Enable -Host 127.0.0.1 -Port 9050');
-                      // Fetch IP après activation du proxy
-                      setIpLoading(true);
-                      const newIp = await getIp();
-                      if (newIp) {
-                        setIp(newIp);
-                        setIpError(null);
-                      } else {
-                        setIpError('Impossible de récupérer votre IP après activation de Tor');
-                      }
-                      setIpLoading(false);
-                    }
-                    setTorProgress(treated.percent);
-                    setLastTorLog(treated.message);
+  async function handleTorRestart() {
+    console.log('Redémarrage de Tor avec la nouvelle sélection de pays...');
+    await stopTor();
+    await startTor();
+  }
+
+  async function startTor() {
+    console.log('Lancement de Tor avec la sélection de pays actuelle...');
+    // Lancer Tor
+    setLogs([]);
+    try {
+      setTorRunning(true);
+      setTorProgress(0);
+      setLastTorLog('Starting');
+      const process = await Neutralino.os.spawnProcess('tor-expert-bundle\\tor.exe -f tor-expert-bundle\\torcc --ExitNodes {' + localStorage.getItem('selectedCountry') + '}');
+      setTorProcessId(process.id);
+      Neutralino.events.on('spawnedProcess', async (evt: { detail: { id: any; action: any; data: any } }) => {
+        if (process.id === evt.detail.id) {
+          switch (evt.detail.action) {
+            case 'stdOut':
+              console.log(`Tor: ${evt.detail.data}`);
+              const treated = treatPercentages(evt.detail.data);
+              if (treated) {
+                if (treated.percent === 100) {
+                  await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Enable');
+                  // Fetch IP après activation du proxy
+                  setIpLoading(true);
+                  const newIp = await getIp();
+                  if (newIp) {
+                    setIp(newIp);
+                    setIpError(null);
+                  } else {
+                    setIpError('Impossible de récupérer votre IP après activation de Tor');
                   }
-                  break;
-                case 'stdErr':
-                  setLogs(prev => [...prev, `Erreur: ${evt.detail.data}`]);
-                  break;
-                case 'exit':
-                  setTorRunning(false);
-                  setTorProcessId(null);
-                  setIp(initialIpFetched); // Revenir à l'IP initiale
-                  setIpError(null);
-                  break;
+                  setIpLoading(false);
+                }
+                setTorProgress(treated.percent);
+                setLastTorLog(treated.message);
               }
-            }
-          });
-        } catch (error: Error | any) {
-          setError(`Échec du lancement de Tor : ${error.message}`);
+              break;
+            case 'stdErr':
+              setLogs(prev => [...prev, `Erreur: ${evt.detail.data}`]);
+              break;
+            case 'exit':
+              setTorRunning(false);
+              setTorProcessId(null);
+              setIp(initialIpFetched); // Revenir à l'IP initiale
+              setIpError(null);
+              break;
+          }
         }
+      });
+    } catch (error: Error | any) {
+      setError(`Échec du lancement de Tor : ${error.message}`);
+    }
+  }
+
+  async function stopTor() {
+    // Stopper Tor
+    try {
+      await Neutralino.os.execCommand('taskkill /IM tor.exe /F');
+      // Désactiver le proxy
+      await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Disable');
+      setTorRunning(false);
+      setTorProcessId(null);
+      setIp(initialIpFetched); // Revenir à l'IP initiale
+      setIpError(null);
+    } catch (error: Error | any) {
+      setError(`Échec de l’arrêt de Tor : ${error.message}`);
+      console.error('Erreur lors de l’arrêt de Tor:', error);
+    }
+  }
+
+  async function handleTorButton() {
+    console.log(torRunning ? 'Arrêt de Tor...' : 'Lancement de Tor...');
+    if (Neutralino && Neutralino.os) {
+      if (!torRunning || restarting) {
+        startTor();
       } else if (torProcessId !== null) {
-        // Stopper Tor
-        try {
-          await Neutralino.os.execCommand('taskkill /IM tor.exe /F');
-          // Désactiver le proxy
-          await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Disable');
-          setTorRunning(false);
-          setTorProcessId(null);
-          setIp(initialIpFetched); // Revenir à l'IP initiale
-          setIpError(null);
-        } catch (error: Error | any) {
-          setError(`Échec de l’arrêt de Tor : ${error.message}`);
-          console.error('Erreur lors de l’arrêt de Tor:', error);
-        }
+        stopTor();
       }
     } else {
       setError('Neutralino OS API non disponible. Lance l’application via Neutralino.');
@@ -202,9 +221,21 @@ function App() {
         <Header />
         {loading && <p className='text-gray-400'>Chargement...</p>}
         {error && <p className='text-red-500'>{error}</p>}
-        {!loading && !error && <CountryList countries={countries} />}
+        {!loading && !error && <CountryList onRestart={handleTorRestart} countries={countries} />}
         <TorProgress torRunning={torRunning} torProgress={torProgress} lastTorLog={lastTorLog} />
-        <TorButton torRunning={torRunning} torProgress={torProgress} handleTorButton={handleTorButton} />
+        <div className="flex flex-row items-center w-full justify-center gap-4">
+          <TorButton
+            torRunning={torRunning}
+            torProgress={torProgress}
+            handleTorButton={handleTorButton}
+            className="h-12 w-full"
+          />
+          <TorRestartButton
+            onRestart={handleTorRestart}
+            disabled={loading || !!error || !torRunning}
+            className="h-12"
+          />
+        </div>
         <Logs logs={logs} />
       </div>
       <Footer />

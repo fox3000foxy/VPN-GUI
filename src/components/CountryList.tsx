@@ -1,7 +1,7 @@
 import React from 'react';
 import { CountryListProps } from '../types/Country';
 
-const CountryList: React.FC<CountryListProps> = ({ countries }) => {
+const CountryList: React.FC<CountryListProps> = ({ countries, onRestart }) => {
   const [country, setCountry] = React.useState<string>(() => {
     return localStorage.getItem('selectedCountry') || '';
   });
@@ -12,6 +12,9 @@ const CountryList: React.FC<CountryListProps> = ({ countries }) => {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setCountry(e.target.value);
     localStorage.setItem('selectedCountry', e.target.value);
+    if (onRestart) {
+      onRestart();
+    }
   };
 
   return (
