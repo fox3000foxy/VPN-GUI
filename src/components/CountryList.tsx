@@ -1,5 +1,5 @@
 import React from 'react';
-import { CountryListProps } from './types/Country';
+import { CountryListProps } from '../types/Country';
 
 const CountryList: React.FC<CountryListProps> = ({ countries }) => {
   const [country, setCountry] = React.useState<string>(() => {

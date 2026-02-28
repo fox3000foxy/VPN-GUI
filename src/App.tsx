@@ -2,8 +2,8 @@ import { faGlobe, faUserSecret } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
 import { nlPort, nlToken } from '../.tmp/auth_info.json';
-import CountryList from './CountryList';
-import { fetchCountries } from './countriesApi';
+import CountryList from './components/CountryList';
+import { fetchCountries } from './libs/countriesApi';
 import { Country } from './types/Country';
 
 function treatPercentages(log: string): { percent: number; message: string } | null {

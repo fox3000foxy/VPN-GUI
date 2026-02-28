@@ -1,4 +1,4 @@
-import { Country } from "./types/Country";
+import { Country } from "../types/Country";
 
 export async function fetchCountries(): Promise<Country[]> {
     const res = await fetch('/data/countries.txt')
