@@ -12,25 +12,24 @@ import { fetchCountries } from './libs/countriesApi';
 import { Country } from './types/Country';
 
 function treatPercentages(log: string): { percent: number; message: string } | null {
-  // Si la log n'a pas de pourcentage, on return null
+  // If the log doesn't have a percentage, return null
   if (!/\d{1,3}%/.test(log)) {
     return null;
   }
 
-  // Trouver le dernier pourcentage
+  // Find the last percentage
   const percentageRegex = /(\d{1,3})%/g;
   const percentages = [...log.matchAll(percentageRegex)];
   if (percentages.length === 0) return null;
   const lastPercentage = percentages[percentages.length - 1][0];
 
-  // Récupérer la partie après les deux points les plus à droite
+  // Get the part after the rightmost colon
   const lastColonIdx = log.lastIndexOf(':');
   if (lastColonIdx === -1) return { percent: parseInt(lastPercentage), message: '' };
 
   const afterColon = log.slice(lastColonIdx + 1).trim();
 
-  // Retourner la partie après les deux points + le dernier pourcentage
-  // return `${afterColon} ${lastPercentage}`;
+  // Return the part after the colon + the last percentage
   return {
     percent: parseInt(lastPercentage),
     message: afterColon,
@@ -43,7 +42,7 @@ async function getIp() {
     const data = await res.json();
     return data.query || null;
   } catch (err) {
-    console.error('Erreur lors de la récupération de l’IP:', err);
+    console.error('Error while fetching IP:', err);
     return null;
   }
 }
@@ -71,18 +70,18 @@ function App() {
         //   const processes = await Neutralino.os.getSpawnedProcesses();
         //   for (const proc of processes) {
         //     // if (proc.id && proc.id !== 0) {
-        //       // await Neutralino.os.updateSpawnedProcess(proc.id, '^C'); // Envoie Ctrl+C pour une terminaison propre
+        //       // await Neutralino.os.updateSpawnedProcess(proc.id, '^C'); // Sends Ctrl+C for a clean termination
 
-        //       console.log(`Processus Tor avec PID ${proc.pid} tué au chargement.`);
+        //       console.log(`Tor process with PID ${proc.pid} killed on load.`);
         //     // }
         //   }
         //   setTorProcessId(null);
         //   setTorRunning(false);
 
-        //   // setLogs(prev => [...prev, 'Tous les processus Tor ont été stoppés au chargement.']);
+        //   // setLogs(prev => [...prev, 'All Tor processes stopped on load.']);
         // } catch (err) {
-        //   console.error('Erreur lors du kill des processus Tor au chargement:', err);
-        //   // setLogs(prev => [...prev, 'Erreur lors du kill des processus Tor au chargement.']);
+        //   console.error('Error while killing Tor processes on load:', err);
+        //   // setLogs(prev => [...prev, 'Error while killing Tor processes on load.']);
         // }
         await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Disable');
         await Neutralino.os.execCommand('taskkill /IM tor.exe /F');
@@ -97,8 +96,8 @@ function App() {
         window.NL_ARGS = [];
         Neutralino.init();
       } catch (err) {
-        console.error("Erreur lors de l'initialisation de Neutralino:", err);
-        setError("Erreur lors de l'initialisation de Neutralino. Assure-toi de lancer l'application via Neutralino.\n" + err);
+        console.error("Error during Neutralino initialization:", err);
+        setError("Error during Neutralino initialization. Make sure to launch the app via Neutralino.\n" + err);
         setLoading(false);
         return;
       }
@@ -109,10 +108,10 @@ function App() {
         setLoading(false);
       })
       .catch(err => {
-        setError('Erreur lors du chargement des pays');
+        setError('Error while loading countries');
         setLoading(false);
       });
-    console.log('Application démarrée');
+    console.log('Application started');
 
     const fetchInitialIp = async () => {
       setIpLoading(true);
@@ -121,7 +120,7 @@ function App() {
         setIp(initialIp);
         setIpError(null);
       } else {
-        setIpError('Impossible de récupérer votre IP au démarrage');
+        setIpError('Unable to fetch your IP at startup');
       }
       setIpLoading(false);
       setInitialIpFetched(initialIp || null);
@@ -130,15 +129,15 @@ function App() {
   }, []);
 
   async function handleTorRestart() {
-    console.log('Redémarrage de Tor avec la nouvelle sélection de pays...');
+    console.log('Restarting Tor with the new country selection...');
     if(!torRunning) return;
     await stopTor();
     await startTor();
   }
 
   async function startTor() {
-    console.log('Lancement de Tor avec la sélection de pays actuelle... Attendez...');
-    // Lancer Tor
+    console.log('Starting Tor with the current country selection... Please wait...');
+    // Start Tor
     setLogs([]);
     try {
       setTorRunning(true);
@@ -155,14 +154,14 @@ function App() {
               if (treated) {
                 if (treated.percent === 100) {
                   await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Enable');
-                  // Fetch IP après activation du proxy
+                  // Fetch IP after proxy activation
                   setIpLoading(true);
                   const newIp = await getIp();
                   if (newIp) {
                     setIp(newIp);
                     setIpError(null);
                   } else {
-                    setIpError('Impossible de récupérer votre IP après activation de Tor');
+                    setIpError('Unable to fetch your IP after Tor activation');
                   }
                   setIpLoading(false);
                 }
@@ -171,40 +170,40 @@ function App() {
               }
               break;
             case 'stdErr':
-              setLogs(prev => [...prev, `Erreur: ${evt.detail.data}`]);
+              setLogs(prev => [...prev, `Error: ${evt.detail.data}`]);
               break;
             case 'exit':
               setTorRunning(false);
               setTorProcessId(null);
-              setIp(initialIpFetched); // Revenir à l'IP initiale
+              setIp(initialIpFetched); // Revert to initial IP
               setIpError(null);
               break;
           }
         }
       });
     } catch (error: Error | any) {
-      setError(`Échec du lancement de Tor : ${error.message}`);
+      setError(`Failed to start Tor: ${error.message}`);
     }
   }
 
   async function stopTor() {
-    // Stopper Tor
+    // Stop Tor
     try {
       await Neutralino.os.execCommand('taskkill /IM tor.exe /F');
-      // Désactiver le proxy
+      // Disable proxy
       await Neutralino.os.execCommand('powershell -ExecutionPolicy Bypass -File proxy.ps1 -Disable');
       setTorRunning(false);
       setTorProcessId(null);
-      setIp(initialIpFetched); // Revenir à l'IP initiale
+      setIp(initialIpFetched); // Revert to initial IP
       setIpError(null);
     } catch (error: Error | any) {
-      setError(`Échec de l’arrêt de Tor : ${error.message}`);
-      console.error('Erreur lors de l’arrêt de Tor:', error);
+      setError(`Failed to stop Tor: ${error.message}`);
+      console.error('Error while stopping Tor:', error);
     }
   }
 
   async function handleTorButton() {
-    console.log(torRunning ? 'Arrêt de Tor...' : 'Lancement de Tor...');
+    console.log(torRunning ? 'Stopping Tor...' : 'Starting Tor...');
     if (Neutralino && Neutralino.os) {
       if (!torRunning || restarting) {
         startTor();
@@ -212,7 +211,7 @@ function App() {
         stopTor();
       }
     } else {
-      setError('Neutralino OS API non disponible. Lance l’application via Neutralino.');
+      setError('Neutralino OS API not available. Please launch the app via Neutralino.');
     }
   }
   return (
@@ -220,7 +219,7 @@ function App() {
       <div className='w-full max-w-xl bg-white/5 backdrop-blur-md rounded-xl shadow-lg p-8 mt-12 mb-4 flex flex-col items-center'>
         <SecurityIndicator torRunning={torRunning} torProgress={torProgress} ip={ip} ipLoading={ipLoading} ipError={ipError} />
         <Header />
-        {loading && <p className='text-gray-400'>Chargement...</p>}
+        {loading && <p className='text-gray-400'>Loading...</p>}
         {error && <p className='text-red-500'>{error}</p>}
         {!loading && !error && <CountryList onRestart={handleTorRestart} countries={countries} />}
         <TorProgress torRunning={torRunning} torProgress={torProgress} lastTorLog={lastTorLog} />
