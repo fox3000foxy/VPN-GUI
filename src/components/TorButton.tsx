@@ -9,18 +9,18 @@ interface TorButtonProps {
 }
 
 const TorButton = ({ torRunning, torProgress, handleTorButton }: TorButtonProps) => {
-  const [text, setText] = useState('Lancer TorGUI');
+  const [text, setText] = useState('Start FoxyProxies');
   const disabled = torRunning && torProgress < 100;
 
   useEffect(() => {
     if (torRunning) {
       if (torProgress < 100) {
-        setText('Lancement en cours');
+        setText('Starting...');
       } else {
-        setText('Arrêter TorGUI');
+        setText('Stop FoxyProxies');
       }
     } else {
-      setText('Lancer TorGUI');
+      setText('Start FoxyProxies');
     }
   }, [torRunning, torProgress]);
   return (
