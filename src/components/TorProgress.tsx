@@ -4,7 +4,11 @@ interface TorProgressProps {
   lastTorLog: string;
 }
 
-const TorProgress = ({ torRunning, torProgress, lastTorLog }: TorProgressProps) => {
+const TorProgress = ({
+  torRunning,
+  torProgress,
+  lastTorLog,
+}: TorProgressProps) => {
   if (!torRunning || torProgress >= 100) return null;
   return (
     <span className="flex items-center mt-4 flex-row gap-2">

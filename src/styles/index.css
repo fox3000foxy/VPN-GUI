@@ -9,7 +9,7 @@ body,
   color: #e0e0e0;
 }
 
-@import url('./fontawesome.css');
+@import url("./fontawesome.css");
 
 .App {
   display: flex;

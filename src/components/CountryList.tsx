@@ -1,17 +1,17 @@
-import React from 'react';
-import { CountryListProps } from '../types/Country';
+import React from "react";
+import { CountryListProps } from "../types/Country";
 
 const CountryList: React.FC<CountryListProps> = ({ countries, onRestart }) => {
   const [country, setCountry] = React.useState<string>(() => {
-    return localStorage.getItem('selectedCountry') || '';
+    return localStorage.getItem("selectedCountry") || "";
   });
 
   // To prevent Encountered two children with the same key message, we can keep track of used country codes and skip duplicates
-  const usedCountries: string[] = []
+  const usedCountries: string[] = [];
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setCountry(e.target.value);
-    localStorage.setItem('selectedCountry', e.target.value);
+    localStorage.setItem("selectedCountry", e.target.value);
     if (onRestart) {
       onRestart();
     }
@@ -23,16 +23,17 @@ const CountryList: React.FC<CountryListProps> = ({ countries, onRestart }) => {
       value={country}
       onChange={handleChange}
     >
-    {countries.map(country => {
-      if (usedCountries.includes(country.code)) {
-        return null; // Skip duplicates
-      }
-      usedCountries.push(country.code);
-      return (
-        <option key={country.code} value={country.code}>
-          {country.name}
-        </option>
-      )})}
+      {countries.map((country) => {
+        if (usedCountries.includes(country.code)) {
+          return null; // Skip duplicates
+        }
+        usedCountries.push(country.code);
+        return (
+          <option key={country.code} value={country.code}>
+            {country.name}
+          </option>
+        );
+      })}
     </select>
   );
 };
