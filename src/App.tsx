@@ -17,9 +17,9 @@ function App() {
   const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialIpFetched, setInitialIpFetched] = useState<string | null>(null);
-  const [restarting, setRestarting] = useState(false);
+  const [restarting] = useState(false);
 
-  const { torProcessId, torRunning, torProgress, lastTorLog, logs, ip, ipLoading, ipError, error, startTor, stopTor, setError, setIp, setIpError, setIpLoading, setTorRunning, setTorProcessId, setTorProgress, setLastTorLog, setLogs } = useTor(initialIpFetched);
+  const { torProcessId, torRunning, torProgress, lastTorLog, logs, ip, ipLoading, ipError, error, startTor, stopTor, setError, setIp, setIpError, setIpLoading } = useTor(initialIpFetched);
 
   // Kill Tor process at startup
   useEffect(() => {
@@ -49,7 +49,7 @@ function App() {
         setCountries(data);
         setLoading(false);
       })
-      .catch(err => {
+      .catch(() => {
         setError('Error while loading countries');
         setLoading(false);
       });
@@ -99,8 +99,8 @@ function App() {
         {!loading && !error && <CountryList onRestart={handleTorRestart} countries={countries} />}
         <TorProgress torRunning={torRunning} torProgress={torProgress} lastTorLog={lastTorLog} />
         <div className='flex flex-row items-center w-full justify-center gap-4'>
-          <TorButton torRunning={torRunning} torProgress={torProgress} handleTorButton={handleTorButton} className='h-12 w-full' />
-          <TorRestartButton onRestart={handleTorRestart} disabled={loading || !!error || !torRunning} className='h-12' />
+          <TorButton torRunning={torRunning} torProgress={torProgress} handleTorButton={handleTorButton}/>
+          <TorRestartButton onRestart={handleTorRestart} disabled={loading || !!error || !torRunning} />
         </div>
         <Logs logs={logs} />
       </div>

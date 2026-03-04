@@ -6,10 +6,9 @@ export interface TorButtonProps {
   torRunning: boolean;
   torProgress: number;
   handleTorButton: () => Promise<void>;
-  className?: string;
 }
 
-const TorButton = ({ torRunning, torProgress, handleTorButton, className }: TorButtonProps) => {
+const TorButton = ({ torRunning, torProgress, handleTorButton }: TorButtonProps) => {
   const [text, setText] = useState('Start FoxyProxies');
   const disabled = torRunning && torProgress < 100;
 

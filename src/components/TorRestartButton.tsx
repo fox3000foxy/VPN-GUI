@@ -4,10 +4,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 interface TorRestartButtonProps {
   onRestart: () => void;
   disabled?: boolean;
-  className?: string;
 }
 
-const TorRestartButton = ({ onRestart, disabled, className }: TorRestartButtonProps) => {
+const TorRestartButton = ({ onRestart, disabled }: TorRestartButtonProps) => {
   return (
     <button
       onClick={onRestart}
